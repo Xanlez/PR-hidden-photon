@@ -381,7 +381,7 @@ int main(int argc, char* argv[]) {
         cdpInsertText(hWebSocket, msgId, line);
         cdpPressEnter(hWebSocket, msgId);
 
-        std::cout << "[OK] Отправлено в Яндекс Документы!\n";
+        std::cout << "[OK] Отправлено.\n";
     }
 
     WinHttpWebSocketClose(hWebSocket, WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, NULL, 0);
