@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <fstream>
 
 const std::string DEFAULT_DOC_URL = "https://disk.yandex.ru/i/CVYHu7Bjcx6xOg";
 
@@ -136,6 +137,7 @@ bool launchBrowserLinux(const std::string& url) {
         "/usr/bin/google-chrome-stable",
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
+        "/snap/bin/chromium",
         "/usr/bin/microsoft-edge",
         "/usr/bin/yandex-browser"
     };
@@ -164,7 +166,11 @@ bool launchBrowserLinux(const std::string& url) {
     const char* home = getenv("HOME");
     std::string profileDir = home ? (std::string(home) + "/.config/yandex_doc_session") : "/tmp/yandex_doc_session";
 
-    std::string runCmd = browserPath + " --remote-debugging-port=9222 --user-data-dir=\"" + profileDir + "\" \"" + url + "\" > /dev/null 2>&1 &";
+    // На сервере запускаем в режиме headless, без GUI и с --no-sandbox (для root)
+    std::string runCmd = browserPath +
+        " --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage"
+        " --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0"
+        " --user-data-dir=\"" + profileDir + "\" \"" + url + "\" > /tmp/browser_debug.log 2>&1 &";
     return (system(runCmd.c_str()) == 0);
 }
 
@@ -334,6 +340,18 @@ int main(int argc, char* argv[]) {
 
     if (!isDebuggerRunning(port)) {
         std::cerr << "[Ошибка] Браузер так и не открыл порт отладки " << port << ".\n";
+        std::cerr << "--- Лог запуска браузера (/tmp/browser_debug.log) ---\n";
+        std::ifstream logFile("/tmp/browser_debug.log");
+        if (logFile.is_open()) {
+            std::string logLine;
+            while (std::getline(logFile, logLine)) {
+                std::cerr << logLine << "\n";
+            }
+            logFile.close();
+        } else {
+            std::cerr << "(Файл лога не найден)\n";
+        }
+        std::cerr << "--------------------------------------------------\n";
         return 1;
     }
 
